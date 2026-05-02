@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tablero — IssueTracker</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
+  <style>
+    body { background-color: #0d1117; color: #e6edf3; }
+    .navbar { background-color: #161b22 !important; border-bottom: 1px solid #30363d; }
+    .columna { background-color: #161b22; border: 1px solid #30363d; border-radius: 8px; min-height: 400px; }
+    .ticket-card { background-color: #21262d; border: 1px solid #30363d; border-radius: 6px;
+                   cursor: pointer; transition: border-color .2s; }
+    .ticket-card:hover { border-color: #1f6feb; }
+    .col-header-pendiente { color: #e3b341; }
+    .col-header-progreso { color: #79c0ff; }
+    .col-header-completado { color: #56d364; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .dot-pendiente { background-color: #e3b341; }
+    .dot-progreso { background-color: #79c0ff; }
+    .dot-completado { background-color: #56d364; }
+  </style>
+</head>
+<body>
+
+  <%- include('../partials/navbar') %>
+
+  <div class="container-fluid py-4 px-4">
+    <div class="d-flex align-items-center gap-3 mb-4">
+      <a id="back-link" href="#" class="text-secondary text-decoration-none small">
+        <i class="bi bi-arrow-left me-1"></i>Volver al proyecto
+      </a>
+      <h5 class="fw-bold mb-0" id="tablero-titulo">Tablero</h5>
+    </div>
+
+    <div class="row g-3">
+      <!-- Pendiente -->
+      <div class="col-md-4">
+        <div class="columna p-3">
+          <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="dot dot-pendiente"></span>
+            <span class="fw-semibold col-header-pendiente">Pendiente</span>
+            <span class="badge bg-secondary ms-auto" id="count-pendiente">0</span>
+          </div>
+          <div id="col-pendiente" class="d-flex flex-column gap-2"></div>
+        </div>
+      </div>
+
+      <!-- En Progreso -->
+      <div class="col-md-4">
+        <div class="columna p-3">
+          <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="dot dot-progreso"></span>
+            <span class="fw-semibold col-header-progreso">En Progreso</span>
+            <span class="badge bg-secondary ms-auto" id="count-progreso">0</span>
+          </div>
+          <div id="col-en_progreso" class="d-flex flex-column gap-2"></div>
+        </div>
+      </div>
+
+      <!-- Completado -->
+      <div class="col-md-4">
+        <div class="columna p-3">
+          <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="dot dot-completado"></span>
+            <span class="fw-semibold col-header-completado">Completado</span>
+            <span class="badge bg-secondary ms-auto" id="count-completado">0</span>
+          </div>
+          <div id="col-completado" class="d-flex flex-column gap-2"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const token = localStorage.getItem('token');
+    const proyectoId = window.location.pathname.split('/')[2];
+
+    document.getElementById('back-link').href = `/proyectos/${proyectoId}`;
+
+    async function cargarTablero() {
+      const [resProyecto, resTickets] = await Promise.all([
+        fetch(`/api/proyectos/${proyectoId}`, { headers: { 'Authorization': `Bearer ${token}` } }),
+        fetch(`/api/proyectos/${proyectoId}/tickets`, { headers: { 'Authorization': `Bearer ${token}` } }),
+      ]);
+
+      const proyecto = await resProyecto.json();
+      const tickets = await resTickets.json();
+
+      document.getElementById('tablero-titulo').textContent = `Tablero — ${proyecto.nombre}`;
+
+      const columnas = { pendiente: [], en_progreso: [], completado: [] };
+      tickets.forEach(t => columnas[t.estado]?.push(t));
+
+      ['pendiente', 'en_progreso', 'completado'].forEach(estado => {
+        const col = document.getElementById(`col-${estado}`);
+        const count = document.getElementById(`count-${estado === 'en_progreso' ? 'progreso' : estado}`);
+        count.textContent = columnas[estado].length;
+
+        if (!columnas[estado].length) {
+          col.innerHTML = '<p class="text-secondary small text-center py-3">Sin tickets</p>';
+          return;
+        }
+
+        col.innerHTML = columnas[estado].map(t => `
+          <div class="ticket-card p-3"
+               onclick="window.location.href='/proyectos/${proyectoId}/tickets/${t.id}'">
+            <p class="small fw-semibold mb-1">${t.titulo}</p>
+            <p class="text-secondary mb-2" style="font-size:.75rem;line-height:1.4;">
+              ${t.descripcion?.substring(0, 80)}${t.descripcion?.length > 80 ? '...' : ''}
+            </p>
+            <div class="d-flex align-items-center gap-1" style="font-size:.75rem;">
+              <i class="bi bi-person text-secondary"></i>
+              <span class="text-secondary">
+                ${t.asignado ? t.asignado.nombre : 'Sin asignar'}
+              </span>
+            </div>
+          </div>
+        `).join('');
+      });
+    }
+
+    cargarTablero();
+  </script>
+</body>
+</html>
