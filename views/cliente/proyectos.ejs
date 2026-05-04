@@ -86,9 +86,9 @@
 
         lista.innerHTML = '';
 
-        if (!proyectos || proyectos.length === 0) { 
-          empty.classList.remove('d-none'); 
-          return; 
+        if (!proyectos || proyectos.length === 0) {
+          empty.classList.remove('d-none');
+          return;
         }
 
         empty.classList.add('d-none');
@@ -133,9 +133,9 @@
       try {
         const res = await fetch('/api/proyectos', {
           method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json', 
-            'Authorization': `Bearer ${currentToken}` 
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentToken}`
           },
           body: JSON.stringify({ nombre, descripcion }),
         });
@@ -159,8 +159,6 @@
         errorEl.classList.remove('d-none');
       }
     }
-
-    // Inicializar carga
     if (currentToken) {
       cargarProyectos();
     }

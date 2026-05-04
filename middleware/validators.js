@@ -15,7 +15,7 @@ const validar = (schema) => (req, res, next) => {
       ? result.error.issues.map(e => `${e.path.join('.')}: ${e.message}`) 
       : ["Datos de entrada inválidos"];
     
-    console.error('❌ [VALIDADOR] Errores de validación:', errores);
+    console.error(' [VALIDADOR] Errores de validación:', errores);
     
 
     const isApiRequest = req.originalUrl.startsWith('/api/');
@@ -37,7 +37,7 @@ const validar = (schema) => (req, res, next) => {
     }
   }
 
-  console.log('✅ [VALIDADOR] Datos validados correctamente');
+  console.log(' [VALIDADOR] Datos validados correctamente');
   req.body = result.data;
   next();
 };
@@ -72,4 +72,4 @@ const schemas = {
   }),
 };
 
-module.exports = { validar, schemas };  
+module.exports = { validar, schemas }; 
