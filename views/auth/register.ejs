@@ -31,20 +31,19 @@
         <div class="card p-4 shadow">
           <div class="alert alert-danger small" id="error-msg"></div>
           <div class="alert alert-success small" id="success-msg"></div>
-
           <div class="mb-3">
             <label class="form-label small text-secondary">Nombre</label>
-            <input type="text" id="nombre" class="form-control" placeholder="Tu nombre"/>
+            <input type="text" id="nombre" class="form-control" placeholder="Tu nombre" autocomplete="name"/>
           </div>
           <div class="mb-3">
             <label class="form-label small text-secondary">Email</label>
-            <input type="email" id="email" class="form-control" placeholder="tu@email.com"/>
+            <input type="email" id="email" class="form-control" placeholder="tu@email.com" autocomplete="email"/>
           </div>
           <div class="mb-4">
             <label class="form-label small text-secondary">Contraseña</label>
-            <input type="password" id="password" class="form-control" placeholder="••••••••"/>
+            <input type="password" id="password" class="form-control" placeholder="••••••••" autocomplete="new-password"/>
           </div>
-          <button class="btn btn-primary w-100 fw-semibold" onclick="register()">
+          <button class="btn btn-primary w-100 fw-semibold" id="btn-register" onclick="register()">
             Crear cuenta
           </button>
 
@@ -59,6 +58,7 @@
   </div>
 
   <script>
+    // Redirigir si ya está logueado
     if (localStorage.getItem('token')) window.location.href = '/proyectos';
 
     async function register() {
@@ -67,6 +67,7 @@
       const password = document.getElementById('password').value;
       const errorEl = document.getElementById('error-msg');
       const successEl = document.getElementById('success-msg');
+      const btn = document.getElementById('btn-register');
       errorEl.style.display = 'none';
       successEl.style.display = 'none';
 
@@ -76,26 +77,35 @@
         return;
       }
 
+      btn.disabled = true;
+
       try {
         const res = await fetch('/api/auth/register', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
           body: JSON.stringify({ nombre, email, password }),
         });
+
         const data = await res.json();
 
         if (!res.ok) {
           errorEl.textContent = data.error || 'Error al registrar';
           errorEl.style.display = 'block';
+          btn.disabled = false;
           return;
         }
-
         successEl.textContent = '¡Cuenta creada! Redirigiendo...';
         successEl.style.display = 'block';
         setTimeout(() => window.location.href = '/login', 1500);
+
       } catch (err) {
-        errorEl.textContent = 'Error de conexión';
+        console.error(err);
+        errorEl.textContent = 'Error de conexión con el servidor';
         errorEl.style.display = 'block';
+        btn.disabled = false;
       }
     }
   </script>

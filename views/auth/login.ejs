@@ -54,7 +54,6 @@
   </div>
 
   <script>
-    // Si ya está logueado, redirigir
     if (localStorage.getItem('token')) window.location.href = '/proyectos';
 
     async function login() {
@@ -92,7 +91,6 @@
       }
     }
 
-    // Enter para login
     document.addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
   </script>
 </body>

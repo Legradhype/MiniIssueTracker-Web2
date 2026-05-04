@@ -27,8 +27,6 @@
   <%- include('../partials/navbar') %>
 
   <div class="container py-5">
-
-    <!-- Header del proyecto -->
     <div class="d-flex justify-content-between align-items-start mb-4" id="proyecto-header">
       <div>
         <a href="/proyectos" class="text-secondary small text-decoration-none">
@@ -48,7 +46,6 @@
     </div>
 
     <div class="row g-4">
-      <!-- Tickets -->
       <div class="col-lg-8">
         <div class="card p-4">
           <div class="d-flex justify-content-between align-items-center mb-3">
@@ -63,7 +60,6 @@
         </div>
       </div>
 
-      <!-- Miembros -->
       <div class="col-lg-4">
         <div class="card p-4">
           <div class="d-flex justify-content-between align-items-center mb-3">
@@ -78,7 +74,6 @@
     </div>
   </div>
 
-  <!-- Modal Editar Proyecto -->
   <div class="modal fade" id="modalEditar" tabindex="-1">
     <div class="modal-dialog">
       <div class="modal-content">
@@ -104,7 +99,6 @@
     </div>
   </div>
 
-  <!-- Modal Nuevo Ticket -->
   <div class="modal fade" id="modalTicket" tabindex="-1">
     <div class="modal-dialog">
       <div class="modal-content">
@@ -137,7 +131,6 @@
     </div>
   </div>
 
-  <!-- Modal Agregar Miembro -->
   <div class="modal fade" id="modalMiembro" tabindex="-1">
     <div class="modal-dialog">
       <div class="modal-content">
@@ -147,8 +140,14 @@
         </div>
         <div class="modal-body">
           <div class="alert alert-danger small d-none" id="miembro-error"></div>
-          <label class="form-label small text-secondary">ID del usuario</label>
-          <input type="number" id="miembro-id" class="form-control" placeholder="ID del usuario"/>
+          <label class="form-label small text-secondary">Email del usuario</label>
+          <div style="position: relative;">
+            <input type="email" id="miembro-email" class="form-control" placeholder="usuario@email.com" 
+                   oninput="buscarUsuarios()" autocomplete="off"/>
+            <ul class="list-group" id="lista-sugerencias" style="position: absolute; top: 100%; width: 100%; 
+                display: none; z-index: 1000; border-radius: 0 0 0.375rem 0.375rem;"></ul>
+          </div>
+          <small class="text-secondary d-block mt-2">💡 Escribe el email del usuario que deseas agregar</small>
         </div>
         <div class="modal-footer">
           <button class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
@@ -178,12 +177,12 @@
       document.getElementById('edit-nombre').value = p.nombre;
       document.getElementById('edit-desc').value = p.descripcion || '';
 
-      // Miembros
+   
       const lista = document.getElementById('lista-miembros');
       lista.innerHTML = p.miembros.map(m => `
         <li class="list-group-item d-flex align-items-center gap-2 px-0 border-0 py-2">
           <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center"
-               style="width:32px;height:32px;font-size:.8rem;flex-shrink:0;">
+          style="width:32px;height:32px;font-size:.8rem;flex-shrink:0;">
             ${m.nombre.charAt(0).toUpperCase()}
           </div>
           <div>
@@ -193,7 +192,7 @@
         </li>
       `).join('');
 
-      // Opciones del select de asignado
+    
       const select = document.getElementById('ticket-asignado');
       select.innerHTML = '<option value="">Sin asignar</option>' +
         p.miembros.map(m => `<option value="${m.id}">${m.nombre}</option>`).join('');
@@ -213,7 +212,7 @@
 
       lista.innerHTML = tickets.map(t => `
         <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-secondary"
-             style="cursor:pointer;" onclick="window.location.href='/proyectos/${proyectoId}/tickets/${t.id}'">
+            style="cursor:pointer;" onclick="window.location.href='/proyectos/${proyectoId}/tickets/${t.id}'">
           <div>
             <span class="small fw-semibold">${t.titulo}</span>
             <div class="text-secondary" style="font-size:.75rem;">
@@ -272,12 +271,12 @@
     }
 
     async function agregarMiembro() {
-      const usuario_id = document.getElementById('miembro-id').value;
+      const email = document.getElementById('miembro-email').value.trim();
       const errorEl = document.getElementById('miembro-error');
       errorEl.classList.add('d-none');
 
-      if (!usuario_id) {
-        errorEl.textContent = 'Ingresá un ID de usuario';
+      if (!email) {
+        errorEl.textContent = 'Ingresá un email válido';
         errorEl.classList.remove('d-none');
         return;
       }
@@ -285,7 +284,7 @@
       const res = await fetch(`/api/proyectos/${proyectoId}/usuarios`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ usuario_id }),
+        body: JSON.stringify({ email }),
       });
       const data = await res.json();
 
@@ -296,8 +295,55 @@
       }
 
       bootstrap.Modal.getInstance(document.getElementById('modalMiembro')).hide();
+      document.getElementById('miembro-email').value = '';
       cargarProyecto();
     }
+    async function buscarUsuarios() {
+      const email = document.getElementById('miembro-email').value.trim();
+      const lista = document.getElementById('lista-sugerencias');
+      
+      if (email.length < 2) {
+        lista.style.display = 'none';
+        return;
+      }
+
+      const res = await fetch(`/api/proyectos/buscar/usuarios?q=${encodeURIComponent(email)}`);
+      const usuarios = await res.json();
+
+      if (usuarios.length === 0) {
+        lista.innerHTML = '<li class="list-group-item small text-secondary">No encontrado</li>';
+        lista.style.display = 'block';
+        return;
+      }
+
+      lista.innerHTML = usuarios.map(u => `
+        <li class="list-group-item list-group-item-action small py-2" 
+            onclick="seleccionarUsuario('${u.email}', '${u.nombre}')"
+            style="cursor: pointer; background-color: #21262d; border-color: #30363d;">
+          <div class="fw-semibold">${u.nombre}</div>
+          <div class="text-secondary" style="font-size: 0.85rem;">${u.email}</div>
+        </li>
+      `).join('');
+      
+      lista.style.display = 'block';
+    }
+
+    function seleccionarUsuario(email, nombre) {
+      document.getElementById('miembro-email').value = email;
+      document.getElementById('lista-sugerencias').style.display = 'none';
+    }
+
+    document.addEventListener('click', (e) => {
+      if (e.target.id !== 'miembro-email' && e.target.id !== 'lista-sugerencias') {
+        document.getElementById('lista-sugerencias').style.display = 'none';
+      }
+    });
+
+    document.getElementById('modalMiembro').addEventListener('show.bs.modal', () => {
+      document.getElementById('miembro-email').value = '';
+      document.getElementById('miembro-error').classList.add('d-none');
+      document.getElementById('lista-sugerencias').style.display = 'none';
+    });
 
     cargarProyecto();
     cargarTickets();

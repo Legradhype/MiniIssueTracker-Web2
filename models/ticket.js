@@ -45,7 +45,7 @@ const Ticket = sequelize.define('Ticket', {
   updatedAt: false,
 });
 
-// Método estático para validar transiciones
+
 Ticket.transicionValida = (estado_actual, nuevo_estado) => {
   return TRANSICIONES[estado_actual]?.includes(nuevo_estado) ?? false;
 };
